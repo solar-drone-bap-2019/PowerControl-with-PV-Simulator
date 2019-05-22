@@ -2,8 +2,6 @@
 
 float I, V, P; // Variables for Current, Voltage and Power
 
-Serial pc2(USBTX, USBRX);
-
 /* Maximum Power Point Tracker Class
 Control the duty cycle of a DC-DC converter switch using PWM,
 to optimize the power flow.
@@ -68,7 +66,6 @@ void MPPT::PerturbObserve(float Target = 0){
     
   }
   else { // Track target power
-    pc2.printf("Target power: %d mW\r\n",static_cast<int>(Target*1000));
     if (P>Target){
       Perturbation = -abs(Perturbation); // set perturbation to negative
     }
@@ -90,9 +87,12 @@ void MPPT::PerturbObserve(float Target = 0){
 }
 
 void MPPT::pause(){
-  DutyCycle = 0; // Set duty cycle to zero
-  DutyOutput->write(DutyCycle); // write Duty Cycle
-  PwmOutput->write(DutyCycle); // Open MOSFET
+  
+  /* Don't set DutyCycle variable to zero
+  Because we want to save it for when MPPT is resumed 
+  Instead just write a zero to DutyOutput and PwmOutput*/
+  DutyOutput->write(0); // write Duty Cycle
+  PwmOutput->write(0); // Open MOSFET
   I = CurrentSensor->read(); // read current sensor
   V = VoltageSensor->read(); // read voltage sensor
   P = I*V; // calculate power (should be zero)
