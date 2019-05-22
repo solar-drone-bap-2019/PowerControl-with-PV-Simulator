@@ -60,7 +60,7 @@ int main() {
             Target = CC.readPload(); // Set Pload as target power.
             MPPT1.PerturbObserve(Target);
 
-            pc.printf("control = 2: Tracking %d percent power\r\n",static_cast<int>(Target*100));     
+            pc.printf("control = 2: Tracking %d mW\r\n",static_cast<int>(Target*1000));     
         }  
    
         // MPPT doesn't need to happen very fast   
