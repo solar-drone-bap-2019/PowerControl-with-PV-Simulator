@@ -56,14 +56,27 @@ int main() {
 
             pc.printf("control = 1: Pausing MPPT\r\n"); 
         }
-        else if (Control == 2) { // Track Target power
+        else if (Control == 2) { // Track Pload
             Target = CC.readPload(); // Set Pload as target power.
             MPPT1.PerturbObserve(Target);
 
             pc.printf("control = 2: Tracking %d mW\r\n",static_cast<int>(Target*1000));     
         }  
+        else if (Control == 3){ // Prevent overcurrent in battery
+            Target = CC.readPload() + CC.readPbatMax(); // Track load power + maximum allowed battery charging power
+            MPPT1.PerturbObserve(Target);
+
+            pc.printf("control = 3: Tracking %d mW\r\n",static_cast<int>(Target*1000));
+
+        }
+
+        else if (Control == 4){
+            MPPT1.reset();
+
+            pc.printf("control = 4: Resetting MPPT\r\n");
+        }
    
         // MPPT doesn't need to happen very fast   
-        wait_ms(10); // Track the power point every 10 ms
+       wait_ms(1); // Track the power point every 1 ms
     }
 }
