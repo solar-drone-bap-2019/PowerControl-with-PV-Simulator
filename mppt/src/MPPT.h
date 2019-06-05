@@ -1,5 +1,7 @@
 #include "mbed.h"
 
+const float PERTURB_CONST = 0.01;
+
 float I, V, P; // Variables for Current, Voltage and Power
 
 /* Maximum Power Point Tracker Class
@@ -28,6 +30,7 @@ class MPPT{
     void PerturbObserve(float Target); 
 
     void pause(); // stop tracking power point, open PWM switch
+    void reset(); // stop tracking power point, reset duty cycle to zero
 };
 
 MPPT::MPPT(PinName I_pin,PinName V_pin,PinName PWM_pin,PinName D_pin){
@@ -36,7 +39,7 @@ MPPT::MPPT(PinName I_pin,PinName V_pin,PinName PWM_pin,PinName D_pin){
   PwmOutput = new PwmOut(PWM_pin);
   DutyOutput = new AnalogOut(D_pin);
 
-  Perturbation = 0.01;// the change in the duty cycle
+  Perturbation = PERTURB_CONST;// the change in the duty cycle
   PwmOutput->period_us(100); // set PWM frequency to 10kHz (1/100us = 10kHz)
 };
 
@@ -60,12 +63,18 @@ void MPPT::PerturbObserve(float Target = 0){
 
   /*perturb*/
   if (Target == 0) { // No target given -> Track MPPT
+    //Perturbation = PERTURB_CONST*Perturbation/abs(Perturbation)*P/PreviousPower;
+    //if (abs(Perturbation) < PERTURB_MIN) {Perturbation = Perturbation/abs(Perturbation) * PERTURB_MIN;}
+    //else if (abs(Perturbation) > PERTURB_MAX){Perturbation = Perturbation/abs(Perturbation) * PERTURB_MAX;}
+
     if (P < PreviousPower) { // if previous perturbation resulted in loss of power:
       Perturbation = -Perturbation; // reverse perturbation direction
     }
+
     
   }
   else { // Track target power
+    Perturbation = PERTURB_CONST;
     if (P>Target){
       Perturbation = -abs(Perturbation); // set perturbation to negative
     }
@@ -74,7 +83,7 @@ void MPPT::PerturbObserve(float Target = 0){
     }  
   }
   DutyCycle = DutyCycle+Perturbation; // Apply Perturbation
-  /*end perturb*/
+  /*       */
 
   // Constrain duty cycle to be in between 0 and 1
   if (DutyCycle < 0) {DutyCycle = 0;}
@@ -93,6 +102,17 @@ void MPPT::pause(){
   Instead just write a zero to DutyOutput and PwmOutput*/
   DutyOutput->write(0); // write Duty Cycle
   PwmOutput->write(0); // Open MOSFET
+  I = CurrentSensor->read(); // read current sensor
+  V = VoltageSensor->read(); // read voltage sensor
+  P = I*V; // calculate power (should be zero)
+  PreviousPower = P;
+}
+
+void MPPT::reset(){
+  /* reset DutyCycle to zero */
+  DutyCycle = 0;
+  DutyOutput->write(DutyCycle);
+  PwmOutput->write(DutyCycle);
   I = CurrentSensor->read(); // read current sensor
   V = VoltageSensor->read(); // read voltage sensor
   P = I*V; // calculate power (should be zero)
