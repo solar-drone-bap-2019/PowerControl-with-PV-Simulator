@@ -11,6 +11,8 @@ And controls the power flow in the system, to maximize solar power usage, withou
 0 = track MPPT
 1 = pause MPPT
 2 = track Pload
+3 = track Pload + PbatMax (overcurrent protection)
+4 = reset MPPT 
 */
 int Control; 
 
@@ -25,7 +27,6 @@ float Target; // Target variable to be sent to MPPTs in case they need to track 
 //Pins for charge Controller
 //#define Vbat PA_5 // Battery voltage sensor               two more analog pins were not achieveable for this simulation
 //#define Iload PA_6 // Load current sensor                 so Vbat and Iload values are set via the software
-#define PvSw PA_7 // Pin out to switches connecting Solar cells to MPPTs
 #define BatSw PA_8 // Switch which can enable battery charging
 
 // define the Serial object
@@ -35,7 +36,7 @@ DigitalOut myled(LED1);
 
 MPPT MPPT1(I1,V1,PWM1,D1); // Create Maximum Power Point Tracker 1
 
-ChargeController CC(PvSw,BatSw); // Create Charge Controller object
+ChargeController CC(BatSw); // Create Charge Controller object
 
 
 int main() {
@@ -60,13 +61,13 @@ int main() {
             Target = CC.readPload(); // Set Pload as target power.
             MPPT1.PerturbObserve(Target);
 
-            pc.printf("control = 2: Tracking %d mW\r\n",static_cast<int>(Target*1000));     
+            pc.printf("control = 2: Tracking %d W\r\n",static_cast<int>(Target));     
         }  
         else if (Control == 3){ // Prevent overcurrent in battery
             Target = CC.readPload() + CC.readPbatMax(); // Track load power + maximum allowed battery charging power
             MPPT1.PerturbObserve(Target);
 
-            pc.printf("control = 3: Tracking %d mW\r\n",static_cast<int>(Target*1000));
+            pc.printf("control = 3: Tracking %d W\r\n",static_cast<int>(Target));
 
         }
 
@@ -77,6 +78,6 @@ int main() {
         }
    
         // MPPT doesn't need to happen very fast   
-       wait_ms(1); // Track the power point every 1 ms
+       //wait_ms(1); // Track the power point every 1 ms
     }
 }
